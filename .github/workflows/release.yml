@@ -46,9 +46,7 @@ jobs:
     needs:
     - build
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/cartesi-wallet  # Replace <package-name> with your PyPI project name
+    environment: release # Replace <package-name> with your PyPI project name
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:

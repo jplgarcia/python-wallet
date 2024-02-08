@@ -48,6 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release # Replace <package-name> with your PyPI project name
     permissions:
+      contents: read
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
     - name: Download all the dists

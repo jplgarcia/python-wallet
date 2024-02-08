@@ -29,9 +29,7 @@ jobs:
       # retrieve your distributions here
       - name: Install Dependencies
         run: |
-          ls
-          ls ..
-          ls ../..
+          ls pyton-wallet/
           cp ./dist ./dist
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.11

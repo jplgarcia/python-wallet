@@ -8,6 +8,13 @@
 
 name: Upload Python Package
 
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
 jobs:
   pypi-publish:
     name: upload release to PyPI

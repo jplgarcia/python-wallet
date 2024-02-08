@@ -33,6 +33,6 @@ jobs:
           python -m pip install cytoolz requests eth_abi routes setuptools wheel twine
       - name: Build dist
         run: |
-          python setup.py sdist bdist_wheel
+          python ./setup.py sdist bdist_wheel
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

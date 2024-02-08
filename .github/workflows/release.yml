@@ -30,6 +30,6 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install cytoolz requests eth_abi routes
+          python -m pip install cytoolz requests eth_abi routes setuptools wheel twine
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

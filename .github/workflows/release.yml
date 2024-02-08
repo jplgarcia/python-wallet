@@ -27,10 +27,12 @@ jobs:
       id-token: write
     steps:
       # retrieve your distributions here
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          ls python-wallet/
-          cp ./dist ./dist
+          pip install setuptools wheel build
+      - name: Build
+        run: |
+          python -m build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.11
 

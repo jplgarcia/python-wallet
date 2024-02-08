@@ -10,7 +10,7 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-from util import str_to_hex
+from cartesi_wallet.util import str_to_hex
 
 
 class Output():

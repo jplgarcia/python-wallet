@@ -23,7 +23,8 @@ pip install -r requirements.txt --no-cache
 find /usr/local/lib -type d -name __pycache__ -exec rm -r {} +
 EOF
 
-COPY ./dapp.py ./wallet.py ./balance.py ./eth_abi_ext.py ./log.py ./outputs.py ./util.py .
+COPY ./dapp.py .
+COPY ./cartesi_wallet/ ./cartesi_wallet/
 
 ENV ROLLUP_HTTP_SERVER_URL="http://127.0.0.1:5004"
 

@@ -12,11 +12,11 @@
 
 import json
 
-from balance import Balance
-from log import logger
-from outputs import Error, Notice, Voucher
 from eth_abi import decode, encode
-from eth_abi_ext import decode_packed
+from cartesi_wallet.balance import Balance
+from cartesi_wallet.log import logger
+from cartesi_wallet.outputs import Error, Notice, Voucher
+from cartesi_wallet.eth_abi_ext import decode_packed
 
 # Function selector to be called during the execution of a voucher that transfers funds,
 # which corresponds to the first 4 bytes of the Keccak256-encoded result of "transfer(address,uint256)"

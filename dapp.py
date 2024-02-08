@@ -1,10 +1,10 @@
 from os import environ
 from urllib.parse import urlparse
 import requests
-import wallet as Wallet
-from util import hex_to_str, str_to_hex
 import logging
 import json
+import cartesi_wallet.wallet as Wallet
+from cartesi_wallet.util import hex_to_str, str_to_hex
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)

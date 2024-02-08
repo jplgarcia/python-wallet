@@ -9,5 +9,7 @@ setup(
         "requests>=2.31.0",
         "eth_abi>=4.0.0",
         "routes>=2.5.0"
-    ]
+    ],
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     )

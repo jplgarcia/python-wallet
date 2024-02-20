@@ -17,11 +17,37 @@ class Balance():
     """
 
     def __init__(self, account: str,
+                 ether: int = 0,
                  erc20: dict[str: int] = None,
                  erc721: dict[str: set[int]] = None):
         self._account = account
+        self._ether = ether if ether else 0
         self._erc20 = erc20 if erc20 else {}
         self._erc721 = erc721 if erc721 else {}
+
+    def ether_get(self) -> int :
+        return self._ether
+    
+    def _ether_increase(self, amount:int) :
+        if amount < 0:
+            raise ValueError(
+                f"Failed to increase ether balance for {self._account}. "
+                f"{amount} should be a positive number")
+
+        self._ether = self._ether + amount
+    
+    def _ether_decrease(self, amount:int) :
+        if amount < 0:
+            raise ValueError(
+                f"Failed to increase ether balance for {self._account}. "
+                f"{amount} should be a positive number")
+
+        if self._ether < amount:
+            raise ValueError(
+                f"Failed to decrease ether balance for {self._account}. "
+                f"Not enough funds to decrease {amount}")
+
+        self._ether = self._ether - amount
 
     def erc20_get(self, erc20: str) -> int:
         return self._erc20.get(erc20, 0)

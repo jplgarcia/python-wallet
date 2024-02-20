@@ -108,7 +108,7 @@ The payload format for transfers and withdrawals may vary with every application
 ```
 
 Parse the input and process the requested operation accordingly.
-Note: the following examples to not check the sender to perform this operations. In such cases is highly recommended to perform a check such as ` data.metadata.msg_sender === json.from ` so only that individual can perform operations from inside their wallet.
+Note: the following examples to not check the sender to perform this operations. In such cases is highly recommended to perform a check such as ` msg_sender == req_json["from"] ` so only that individual can perform operations from inside their wallet.
 
 ```python
 msg_sender = data["metadata"]["msg_sender"]

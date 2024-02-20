@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="cartesi_wallet",
-    version="0.0.1",
+    version="0.0.2",
     packages=find_packages(),
     install_requires=[
         "cytoolz>=0.12.2",

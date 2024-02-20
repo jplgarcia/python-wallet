@@ -1,6 +1,6 @@
 # Python-Wallet
 
-This is a typescript based Wallet implementation for Cartesi Dapps to handle different types of Assets. Throu this wallet a developer can implement functionalities of asset handling inside their dApp, that include depositing asset in the dApp, transfering and withdrawing.
+This is a python based Wallet implementation for Cartesi Dapps to handle different types of Assets. Through this wallet a developer can implement functionalities of asset handling inside their dApp, that include depositing asset in the dApp, transfering and withdrawing.
 
 For a full example check the file: https://github.com/jplgarcia/python-wallet/blob/main/dapp.py
 
@@ -215,6 +215,7 @@ def handle_advance(data):
         rollup_address = payload
         response = requests.post(rollup_server + "/notice", json={"payload": str_to_hex(f"Set rollup_address {rollup_address}")})
         return "accept"
+
     # Deposit
     try:
         notice = None
@@ -228,6 +229,7 @@ def handle_advance(data):
         error_msg = f"Failed to process deposit '{payload}'. {error}"
         logger.debug(error_msg, exc_info=True)
         return "reject"
+
     # Transfer and Withdraw
     try:
         req_json = decode_json(payload)
@@ -324,6 +326,7 @@ def handle_advance(data):
     logger.info(f"Received advance request data {data}")
     msg_sender = data["metadata"]["msg_sender"]
     payload = data["payload"]
+    
     # Set Relay
     if msg_sender.lower() == dapp_relay_address.lower():
         global rollup_address

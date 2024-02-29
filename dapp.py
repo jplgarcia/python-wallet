@@ -9,8 +9,9 @@ from cartesi_wallet.util import hex_to_str, str_to_hex
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
-rollup_server = "http://localhost:8080/rollup"#environ["ROLLUP_HTTP_SERVER_URL"]
-rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
+rollup_server = "http://localhost:8080/rollup"
+if "ROLLUP_HTTP_SERVER_URL" in environ:
+    rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 
 dapp_relay_address = "0xF5DE34d6BbC0446E2a45719E718efEbaaE179daE" #open(f'./deployments/{network}/ERC20Portal.json')
@@ -57,7 +58,8 @@ def handle_advance(data):
             logger.info(f"Received notice status {response.status_code} body {response.content}")
             return "accept"
     except Exception as error:
-        error_msg = f"Failed to process deposit '{payload}'. {error}"
+        error_msg = f"Failed to process command '{payload}'. {error}"
+        response = requests.post(rollup_server + "/report", json={"payload": encode(error_msg)})
         logger.debug(error_msg, exc_info=True)
         return "reject"
         
@@ -65,19 +67,23 @@ def handle_advance(data):
         req_json = decode_json(payload)
         print(req_json)
         if req_json["method"] == "ether_transfer":
-            notice = wallet.ether_transfer(req_json["from"].lower(), req_json["to"].lower(), req_json["amount"])
+            converted_value = int(req_json["amount"]) if isinstance(req_json["amount"], str) and req_json["amount"].isdigit() else req_json["amount"]
+            notice = wallet.ether_transfer(req_json["from"].lower(), req_json["to"].lower(), converted_value)
             response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
 
         if req_json["method"] == "ether_withdraw":
-            voucher = wallet.ether_withdraw(rollup_address, req_json["from"].lower(), req_json["amount"])
+            converted_value = int(req_json["amount"]) if isinstance(req_json["amount"], str) and req_json["amount"].isdigit() else req_json["amount"]
+            voucher = wallet.ether_withdraw(rollup_address, req_json["from"].lower(), converted_value)
             response = requests.post(rollup_server + "/voucher", json={"payload": voucher.payload, "destination": voucher.destination})
 
         if req_json["method"] == "erc20_transfer":
-            notice = wallet.erc20_transfer(req_json["from"].lower(), req_json["to"].lower(), req_json["erc20"].lower(), req_json["amount"])
+            converted_value = int(req_json["amount"]) if isinstance(req_json["amount"], str) and req_json["amount"].isdigit() else req_json["amount"]
+            notice = wallet.erc20_transfer(req_json["from"].lower(), req_json["to"].lower(), req_json["erc20"].lower(), converted_value)
             response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
 
         if req_json["method"] == "erc20_withdraw":
-            voucher = wallet.erc20_withdraw(req_json["from"].lower(), req_json["erc20"].lower(), req_json["amount"])
+            converted_value = int(req_json["amount"]) if isinstance(req_json["amount"], str) and req_json["amount"].isdigit() else req_json["amount"]
+            voucher = wallet.erc20_withdraw(req_json["from"].lower(), req_json["erc20"].lower(), converted_value)
             response = requests.post(rollup_server + "/voucher", json={"payload": voucher.payload, "destination": voucher.destination})
 
         if req_json["method"] == "erc721_transfer":

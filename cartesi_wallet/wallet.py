@@ -15,7 +15,7 @@ import json
 from eth_abi import decode, encode
 from cartesi_wallet.balance import Balance
 from cartesi_wallet.log import logger
-from cartesi_wallet.outputs import Error, Notice, Voucher
+from cartesi_wallet.outputs import Notice, Voucher
 from cartesi_wallet.eth_abi_ext import decode_packed
 
 # Function selector to be called during the execution of a voucher that transfers funds,
@@ -62,15 +62,11 @@ def ether_deposit_process(payload: str):
     '''
     # remove the '0x' prefix and convert to bytes
     binary_payload = bytes.fromhex(payload[2:])
-    try:
-        account, amount = _ether_deposit_parse(binary_payload)
-        logger.info(f"'{amount} ' ether deposited "
-                    f"in account '{account}'")
-        return _ether_deposit(account, amount)
-    except ValueError as error:
-        error_msg = f"{error}"
-        logger.debug(error_msg, exc_info=True)
-        return Error(error_msg)
+    account, amount = _ether_deposit_parse(binary_payload)
+    logger.info(f"'{amount} ' ether deposited "
+                f"in account '{account}'")
+    return _ether_deposit(account, amount)
+    
 
 def erc20_deposit_process(payload:str):
     '''
@@ -85,15 +81,11 @@ def erc20_deposit_process(payload:str):
     '''
     # remove the '0x' prefix and convert to bytes
     binary_payload = bytes.fromhex(payload[2:])
-    try:
-        account, erc20, amount = _erc20_deposit_parse(binary_payload)
-        logger.info(f"'{amount} {erc20}' tokens deposited "
-                    f"in account '{account}'")
-        return _erc20_deposit(account, erc20, amount)
-    except ValueError as error:
-        error_msg = f"{error}"
-        logger.debug(error_msg, exc_info=True)
-        return Error(error_msg)
+    account, erc20, amount = _erc20_deposit_parse(binary_payload)
+    logger.info(f"'{amount} {erc20}' tokens deposited "
+                f"in account '{account}'")
+    return _erc20_deposit(account, erc20, amount)
+    
 
 def erc721_deposit_process(payload:str):
     '''
@@ -109,15 +101,11 @@ def erc721_deposit_process(payload:str):
     '''
     # remove the '0x' prefix and convert to bytes
     binary_payload = bytes.fromhex(payload[2:])
-    try:
-        account, erc721, token_id = _erc721_deposit_parse(binary_payload)
-        logger.info(f"Token 'ERC-721: {erc721}, id: {token_id}' deposited "
-                    f"in '{account}'")
-        return _erc721_deposit(account, erc721, token_id)
-    except ValueError as error:
-        error_msg = f"{error}"
-        logger.debug(error_msg, exc_info=True)
-        return Error(error_msg)
+    account, erc721, token_id = _erc721_deposit_parse(binary_payload)
+    logger.info(f"Token 'ERC-721: {erc721}, id: {token_id}' deposited "
+                f"in '{account}'")
+    return _erc721_deposit(account, erc721, token_id)
+ 
 
 def _ether_deposit_parse(binary_payload: bytes):
     '''
@@ -303,7 +291,7 @@ def ether_withdraw(rollup_address, account, amount):
             `account` address.
     '''
     if rollup_address == "":
-        return Error("Dapp Relay not set")
+        raise Exception("Dapp Relay not set")
 
     balance = _balance_get(account)
     balance._ether_decrease(amount)
@@ -326,28 +314,24 @@ def ether_transfer(account, to, amount):
         Returns:
             notice (Notice): A notice detailing the transfer operation.
     '''
-    try:
-        balance = _balance_get(account)
-        balance_to = _balance_get(to)
+    balance = _balance_get(account)
+    balance_to = _balance_get(to)
 
-        balance._ether_decrease(amount)
-        balance_to._ether_increase(amount)
+    balance._ether_decrease(amount)
+    balance_to._ether_increase(amount)
 
-        notice_payload = {
-            "type": "erthertransfer",
-            "content": {
-                "from": account,
-                "to": to,
-                "amount": amount
-            }
+    notice_payload = {
+        "type": "erthertransfer",
+        "content": {
+            "from": account,
+            "to": to,
+            "amount": amount
         }
-        logger.info(f"'{amount}' tokens transferred from "
-                    f"'{account}' to '{to}'")
-        return Notice(json.dumps(notice_payload))
-    except Exception as error:
-        error_msg = f"{error}"
-        logger.debug(error_msg, exc_info=True)
-        return Error(error_msg)
+    }
+    logger.info(f"'{amount}' tokens transferred from "
+                f"'{account}' to '{to}'")
+    return Notice(json.dumps(notice_payload))
+    
 
 def erc20_withdraw(account, erc20, amount):
     '''
@@ -384,42 +368,34 @@ def erc20_transfer(account, to, erc20, amount):
         Returns:
             notice (Notice): A notice detailing the transfer operation.
     '''
-    try:
-        balance = _balance_get(account)
-        balance_to = _balance_get(to)
+    balance = _balance_get(account)
+    balance_to = _balance_get(to)
 
-        balance._erc20_decrease(erc20, amount)
-        balance_to._erc20_increase(erc20, amount)
+    balance._erc20_decrease(erc20, amount)
+    balance_to._erc20_increase(erc20, amount)
 
-        notice_payload = {
-            "type": "erc20transfer",
-            "content": {
-                "from": account,
-                "to": to,
-                "erc20": erc20,
-                "amount": amount
-            }
+    notice_payload = {
+        "type": "erc20transfer",
+        "content": {
+            "from": account,
+            "to": to,
+            "erc20": erc20,
+            "amount": amount
         }
-        logger.info(f"'{amount} {erc20}' tokens transferred from "
-                    f"'{account}' to '{to}'")
-        return Notice(json.dumps(notice_payload))
-    except Exception as error:
-        error_msg = f"{error}"
-        logger.debug(error_msg, exc_info=True)
-        return Error(error_msg)
+    }
+    logger.info(f"'{amount} {erc20}' tokens transferred from "
+                f"'{account}' to '{to}'")
+    return Notice(json.dumps(notice_payload))
+
 
 def erc721_withdraw(rollup_address, sender, erc721, token_id):
 
     if rollup_address == "":
-        return Error("Dapp Relay not set")
+        raise Exception("Dapp Relay not set")
     
-    try:
-        balance = _balance_get(sender)
-        balance._erc721_remove(erc721, token_id)
-    except Exception as error:
-        error_msg = f"{error}"
-        logger.debug(error_msg, exc_info=True)
-        return Error(error_msg)
+    balance = _balance_get(sender)
+    balance._erc721_remove(erc721, token_id)
+   
 
     payload = ERC721_SAFE_TRANSFER_FROM_SELECTOR + encode(
         ['address', 'address', 'uint256'],
@@ -442,26 +418,22 @@ def erc721_transfer(account, to, erc721, token_id):
         Returns:
             notice (Notice): A notice detailing the transfer operation.
     '''
-    try:
-        balance = _balance_get(account)
-        balance_to = _balance_get(to)
+    balance = _balance_get(account)
+    balance_to = _balance_get(to)
 
-        balance._erc721_remove(erc721, token_id)
-        balance_to._erc721_add(erc721, token_id)
+    balance._erc721_remove(erc721, token_id)
+    balance_to._erc721_add(erc721, token_id)
 
-        notice_payload = {
-            "type": "erc721transfer",
-            "content": {
-                "from": account,
-                "to": to,
-                "erc721": erc721,
-                "token_id": token_id
-            }
+    notice_payload = {
+        "type": "erc721transfer",
+        "content": {
+            "from": account,
+            "to": to,
+            "erc721": erc721,
+            "token_id": token_id
         }
-        logger.info(f"Token 'ERC-721: {erc721}, id: {token_id}' transferred "
-                    f"from '{account}' to '{to}'")
-        return Notice(json.dumps(notice_payload))
-    except Exception as error:
-        error_msg = f"{error}"
-        logger.debug(error_msg, exc_info=True)
-        return Error(error_msg)
+    }
+    logger.info(f"Token 'ERC-721: {erc721}, id: {token_id}' transferred "
+                f"from '{account}' to '{to}'")
+    return Notice(json.dumps(notice_payload))
+  

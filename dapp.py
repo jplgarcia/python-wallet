@@ -106,10 +106,16 @@ def handle_inspect(data):
     logger.info(f"Received inspect request data {data}")
     try:
         url = urlparse(hex_to_str(data["payload"]))
+        if url.path.startswith("test"):
+            report = {"payload": encode({"Hello": "WORLD"})}
+            response = requests.post(rollup_server + "/report", json=report)
+
         if url.path.startswith("balance/"):
             info = url.path.replace("balance/", "").split("/")
             token_type, account = info[0].lower(), info[1].lower()
             token_address, token_id, amount = "", 0, 0
+            
+            token_address = info[2]
 
             if (token_type == "ether"):
                 amount = wallet.balance_get(account).ether_get()

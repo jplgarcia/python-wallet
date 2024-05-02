@@ -9,7 +9,7 @@ from cartesi_wallet.util import hex_to_str, str_to_hex
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
-rollup_server = "http://localhost:8080/rollup"
+rollup_server = "http://localhost:5004"
 if "ROLLUP_HTTP_SERVER_URL" in environ:
     rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")

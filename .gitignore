@@ -1,2 +1,9 @@
 .cartesi
 .venv
+
+tests/erc721_project/
+tests/erc1155_project/
+
+tests/.test-venv/
+
+__pycache__/

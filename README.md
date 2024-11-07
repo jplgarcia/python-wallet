@@ -404,10 +404,10 @@ balance/ether/0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
 erc20:
 balance/ether/{wallet}/{token_address}
-balance/erc20/0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266/0xae7f61eCf06C65405560166b259C54031428A9C4
+balance/erc20/0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266/0x92C6bcA388E99d6B304f1Af3c3Cd749Ff0b591e2
 
 erc721:
 balance/ether/{wallet}/{token_addres}/{token_id}
-balance/erc721/0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266/0xae7f61eCf06C65405560166b259C54031428A9C4/0
+balance/erc721/0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266/0x04d724738873CB6a86328D2EbAEb2079D715e61e/0
 ```
 

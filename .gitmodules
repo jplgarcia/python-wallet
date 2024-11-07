@@ -1,0 +1,15 @@
+[submodule "erc721_project/lib/forge-std"]
+	path = erc721_project/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "erc721_project/lib/openzeppelin-contracts"]
+	path = erc721_project/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "erc1155_project/lib/openzeppelin-contracts"]
+	path = erc1155_project/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "tests/erc721_project/lib/openzeppelin-contracts"]
+	path = tests/erc721_project/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "tests/erc1155_project/lib/openzeppelin-contracts"]
+	path = tests/erc1155_project/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts

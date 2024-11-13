@@ -44,8 +44,12 @@ class Voucher(Output):
 
     def __init__(self, destination: str, payload: bytes):
         self.destination = destination
-        hexpayload = "0x" + payload.hex()
-        super().__init__(hexpayload)
+       
+        if payload[:2] == "0x":
+            super().__init__(payload)
+        else:        
+            hexpayload = "0x" + payload.hex()
+            super().__init__(hexpayload)
 
 
 class Notice(Output):

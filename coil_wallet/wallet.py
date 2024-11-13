@@ -485,7 +485,7 @@ def _erc1155_deposit(account, token, token_id, value):
     }
     return Notice(json.dumps(notice_payload))
 
-def erc1155_single_withdraw(rollup_address, sender, token, token_id, value, data):
+def erc1155_single_withdraw(rollup_address, sender, token, token_id, value):
     '''
     Withdraw ERC-1155 tokens in a single transfer.
 
@@ -507,8 +507,8 @@ def erc1155_single_withdraw(rollup_address, sender, token, token_id, value, data
     balance._erc1155_decrease(token, token_id, value)
 
     transfer_payload = encode_function_call(ERC1155_SAFE_TRANSFER_FROM_SELECTOR, 
-                                            ["address", "address", "uint256", "uint256"],
-                                            [rollup_address, sender, token_id, value])
+                                            ["address", "address", "uint256", "uint256", "bytes"],
+                                            [rollup_address, sender, token_id, value, b''])
 
     logger.info(f"'{value} of token ID {token_id}' withdrawn from '{sender}'")
     return Voucher(token, transfer_payload)
@@ -530,8 +530,8 @@ def erc1155_transfer(account, to, erc1155, token_id, amount):
     balance = _balance_get(account)
     balance_to = _balance_get(to)
 
-    balance._erc1155_remove(erc1155, token_id, amount)
-    balance_to._erc1155_add(erc1155, token_id, amount)
+    balance._erc1155_decrease(erc1155, token_id, amount)
+    balance_to._erc1155_increase(erc1155, token_id, amount)
 
     notice_payload = {
         "type": "erc1155transfer",
@@ -631,7 +631,7 @@ def _erc1155_batch_deposit(account, token, token_ids, values):
     }
     return Notice(json.dumps(notice_payload))
 
-def erc1155_batch_withdraw(rollup_address, sender, token, token_ids, values, data):
+def erc1155_batch_withdraw(rollup_address, sender, token, token_ids, values):
     '''
     Withdraw ERC-1155 tokens in a batch transfer.
 
@@ -656,7 +656,7 @@ def erc1155_batch_withdraw(rollup_address, sender, token, token_ids, values, dat
     transfer_payload = encode_function_call(
         ERC1155_SAFE_BATCH_TRANSFER_FROM_SELECTOR,
         ["address", "address", "uint256[]", "uint256[]", "bytes"],
-        [rollup_address, sender, token_ids, values, data]
+        [rollup_address, sender, token_ids, values, b'']
     )
 
     logger.info(f"Batch withdraw of tokens {token_ids} with values {values} from '{sender}'")

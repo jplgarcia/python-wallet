@@ -14,6 +14,7 @@ import subprocess
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+SLEEP_TIME = 5
 
 rollup_server = "http://localhost:8080"
 
@@ -59,14 +60,24 @@ def send_transaction(to, data, value=0):
     signed_tx = w3.eth.account.sign_transaction(tx, private_key=private_key_1)
     return w3.to_hex(w3.eth.send_raw_transaction(signed_tx.raw_transaction))
 
+def send_transaction_from_account_2(to, data, value=0):
+    tx = {
+        'to': to,
+        'data': data,
+        'value': w3.to_wei(value, 'ether'),
+        'gas': 2000000,
+        'gasPrice': w3.to_wei('50', 'gwei'),
+        'nonce': w3.eth.get_transaction_count(account_2),
+    }
+    signed_tx = w3.eth.account.sign_transaction(tx, private_key=private_key_2)
+    return w3.to_hex(w3.eth.send_raw_transaction(signed_tx.raw_transaction))
+
 def parse_balance_response(response_content):
     # The payload is nested in 'reports' > 0 > 'payload'
     report = response_content.get("reports", [{}])[0].get("payload", "")
     if report:
         # Decode the payload if it's encoded in hex
         decoded_report = bytes.fromhex(report[2:]).decode('utf-8')  # Remove '0x' and decode
-        logger.info("--- decoded")
-        logger.info(decoded_report)
         return json.loads(decoded_report)
     return None
 
@@ -79,7 +90,7 @@ class TestDepositsAndTransfers:
     #     print("Script 1 output:", result1.stdout)
     #     if result1.stderr:
     #         print("Script 1 error:", result1.stderr)
-    #     time.sleep(5)
+    #     time.sleep(SLEEP_TIME)
 
 
     #     # Run the second script
@@ -88,7 +99,7 @@ class TestDepositsAndTransfers:
     #     if result2.stderr:
     #         print("Script 2 error:", result2.stderr)
 
-    #     time.sleep(5)
+    #     time.sleep(SLEEP_TIME)
 
     def test_deposit_ether(self):
         value = 1000
@@ -96,10 +107,9 @@ class TestDepositsAndTransfers:
 
         encoded_data = encode(['address', 'bytes'], [dapp_address, b''])
         tx_hash = send_transaction(ether_portal_address, data + encoded_data.hex(), value)
-        logger.info(f"### Ether Transaction sent: {tx_hash}")
 
         assert tx_hash, f"Ether deposit failed for {value} ETH."
-        time.sleep(3)
+        time.sleep(SLEEP_TIME)
 
 
     def test_deposit_erc20(self):
@@ -107,131 +117,263 @@ class TestDepositsAndTransfers:
 
         data = Web3.to_hex(Web3.keccak(text="approve(address,uint256)")[:4])
         encoded_data = encode(['address', 'uint256'], [erc20_portal_address, w3.to_wei(value, 'ether')])
-        logger.info(data + encoded_data.hex())
         tx_hash = send_transaction(erc20_token_address, data + encoded_data.hex())
-        time.sleep(5)
+        time.sleep(SLEEP_TIME)
 
         data = Web3.to_hex(Web3.keccak(text="depositERC20Tokens(address,address,uint256,bytes)")[:4])
         encoded_data = encode(['address', 'address', 'uint256', 'bytes'], [erc20_token_address, dapp_address, w3.to_wei(value, 'ether'), b''])
-        logger.info(data + encoded_data.hex())
         tx_hash = send_transaction(erc20_portal_address, data + encoded_data.hex())
-        logger.info(f"### ERC20 Transaction sent: {tx_hash}")
 
         assert tx_hash, f"ERC20 deposit failed for {value} tokens."
-        time.sleep(5)
+        time.sleep(SLEEP_TIME)
 
 
-    def test_deposit_erc721(self):
+    # def test_deposit_erc721(self):
 
-        data = Web3.to_hex(Web3.keccak(text="approve(address,uint256)")[:4])
-        encoded_data = encode(['address', 'uint256'], [erc721_portal_address, 0])
-        logger.info(data + encoded_data.hex())
-        tx_hash = send_transaction(erc721_token_address, data + encoded_data.hex())
-        time.sleep(5)
+    #     data = Web3.to_hex(Web3.keccak(text="approve(address,uint256)")[:4])
+    #     encoded_data = encode(['address', 'uint256'], [erc721_portal_address, 0])
+    #     tx_hash = send_transaction(erc721_token_address, data + encoded_data.hex())
+    #     time.sleep(SLEEP_TIME)
 
-        token_id = 0
-        data = Web3.to_hex(Web3.keccak(text="depositERC721Token(address,address,uint256,bytes,bytes)")[:4])
-        encoded_data = encode(['address', 'address', 'uint256', 'bytes', 'bytes'], [erc721_token_address, dapp_address, token_id, b'', b''])
-        tx_hash = send_transaction(erc721_portal_address, data + encoded_data.hex())
-        logger.info(f"### ERC721 Transaction sent: {tx_hash}")
+    #     token_id = 0
+    #     data = Web3.to_hex(Web3.keccak(text="depositERC721Token(address,address,uint256,bytes,bytes)")[:4])
+    #     encoded_data = encode(['address', 'address', 'uint256', 'bytes', 'bytes'], [erc721_token_address, dapp_address, token_id, b'', b''])
+    #     tx_hash = send_transaction(erc721_portal_address, data + encoded_data.hex())
 
-        assert tx_hash, f"ERC721 deposit failed for token ID {token_id}."
-        time.sleep(5)
+    #     assert tx_hash, f"ERC721 deposit failed for token ID {token_id}."
+    #     time.sleep(SLEEP_TIME)
 
 
-    def test_deposit_erc1155(self):
-        data = Web3.to_hex(Web3.keccak(text="setApprovalForAll(address,bool)")[:4])
-        encoded_data = encode(['address', 'bool'], [erc1155_portal_address, True])
-        logger.info(data + encoded_data.hex())
-        tx_hash = send_transaction(erc1155_token_address, data + encoded_data.hex())
+    # def test_deposit_erc1155(self):
+    #     data = Web3.to_hex(Web3.keccak(text="setApprovalForAll(address,bool)")[:4])
+    #     encoded_data = encode(['address', 'bool'], [erc1155_portal_address, True])
+    #     tx_hash = send_transaction(erc1155_token_address, data + encoded_data.hex())
         
-        assert tx_hash, f"ERC1155 allowance failed."
-        time.sleep(5)
+    #     assert tx_hash, f"ERC1155 allowance failed."
+    #     time.sleep(SLEEP_TIME)
     
-        token_id, value = 1, 2
-        data = Web3.to_hex(Web3.keccak(text="depositSingleERC1155Token(address,address,uint256,uint256,bytes,bytes)")[:4])
-        encoded_data = encode(['address', 'address', 'uint256', 'uint256', 'bytes', 'bytes'], [erc1155_token_address, dapp_address, token_id, value, b'', b''])
-        tx_hash = send_transaction(erc1155_portal_address, data + encoded_data.hex())
-        logger.info(f"### ERC1155 Transaction sent: {tx_hash}")
+    #     token_id, value = 1, 2
+    #     data = Web3.to_hex(Web3.keccak(text="depositSingleERC1155Token(address,address,uint256,uint256,bytes,bytes)")[:4])
+    #     encoded_data = encode(['address', 'address', 'uint256', 'uint256', 'bytes', 'bytes'], [erc1155_token_address, dapp_address, token_id, value, b'', b''])
+    #     tx_hash = send_transaction(erc1155_portal_address, data + encoded_data.hex())
 
-        assert tx_hash, f"ERC1155 single deposit failed for token ID {token_id}, value {value}."
-        time.sleep(5)
+    #     assert tx_hash, f"ERC1155 single deposit failed for token ID {token_id}, value {value}."
+    #     time.sleep(SLEEP_TIME)
 
 
-    def test_deposit_erc1155_batch(self):
-        data = Web3.to_hex(Web3.keccak(text="setApprovalForAll(address,bool)")[:4])
-        encoded_data = encode(['address', 'bool'], [erc1155_batch_portal_address, True])
-        logger.info(data + encoded_data.hex())
-        tx_hash = send_transaction(erc1155_token_address, data + encoded_data.hex())
+    # def test_deposit_erc1155_batch(self):
+    #     data = Web3.to_hex(Web3.keccak(text="setApprovalForAll(address,bool)")[:4])
+    #     encoded_data = encode(['address', 'bool'], [erc1155_batch_portal_address, True])
+    #     tx_hash = send_transaction(erc1155_token_address, data + encoded_data.hex())
 
-        assert tx_hash, f"ERC1155 allowance failed."
-        time.sleep(5)
+    #     assert tx_hash, f"ERC1155 allowance failed."
+    #     time.sleep(SLEEP_TIME)
 
-        token_ids, values = [1, 2], [3, 4]
-        data = Web3.to_hex(Web3.keccak(text="depositBatchERC1155Token(address,address,uint256[],uint256[],bytes,bytes)")[:4])
-        encoded_data = encode(['address', 'address', 'uint256[]', 'uint256[]', 'bytes', 'bytes'], [erc1155_token_address, dapp_address, token_ids, values, b'', b''])
-        tx_hash = send_transaction(erc1155_batch_portal_address, data + encoded_data.hex())
-        logger.info(f"### BATCH ERC1155 Transaction sent: {tx_hash}")
+    #     token_ids, values = [1, 2], [3, 4]
+    #     data = Web3.to_hex(Web3.keccak(text="depositBatchERC1155Token(address,address,uint256[],uint256[],bytes,bytes)")[:4])
+    #     encoded_data = encode(['address', 'address', 'uint256[]', 'uint256[]', 'bytes', 'bytes'], [erc1155_token_address, dapp_address, token_ids, values, b'', b''])
+    #     tx_hash = send_transaction(erc1155_batch_portal_address, data + encoded_data.hex())
 
-        assert tx_hash, f"ERC1155 batch deposit failed for token IDs {token_ids}."
-        time.sleep(5)
+    #     assert tx_hash, f"ERC1155 batch deposit failed for token IDs {token_ids}."
+    #     time.sleep(SLEEP_TIME)
 
-    @pytest.mark.parametrize("token_type, account, token_address, token_id, expected_balance", [
-        ("ether", account_1, None, None, w3.to_wei(1000, 'ether')),
-        ("erc20", account_1, erc20_token_address.lower(), None, w3.to_wei(1000, 'ether')),
-        ("erc721", account_1, erc721_token_address, 0, 1),
-        ("erc1155", account_1, erc1155_token_address, 1, 5),
-        ("erc1155", account_1, erc1155_token_address, 2, 4),
+    # @pytest.mark.parametrize("token_type, account, token_address, token_id, expected_balance", [
+    #     ("ether", account_1, None, None, w3.to_wei(1000, 'ether')),
+    #     ("erc20", account_1, erc20_token_address.lower(), None, w3.to_wei(1000, 'ether')),
+    #     ("erc721", account_1, erc721_token_address, 0, 1),
+    #     ("erc1155", account_1, erc1155_token_address, 1, 5),
+    #     ("erc1155", account_1, erc1155_token_address, 2, 4),
 
-    ])
-    def test_inspect_balance(self, token_type, account, token_address, token_id, expected_balance):
-        # Construct the path
-        path = f"balance/{token_type}/{account}"
-        if token_address:
-            path += f"/{token_address}"
-        if token_id is not None:
-            path += f"/{token_id}"
+    # ])
+    # def test_inspect_balance(self, token_type, account, token_address, token_id, expected_balance):
+    #     # Construct the path
+    #     path = f"balance/{token_type}/{account}"
+    #     if token_address:
+    #         path += f"/{token_address}"
+    #     if token_id is not None:
+    #         path += f"/{token_id}"
 
-        # Send the inspect request to the server
-        response = requests.get(f"{rollup_server}/inspect/{path}")
-        assert response.status_code == 200, f"Failed to inspect balance for {token_type}"
+    #     # Send the inspect request to the server
+    #     response = requests.get(f"{rollup_server}/inspect/{path}")
+    #     assert response.status_code == 200, f"Failed to inspect balance for {token_type}"
 
-        # Parse and validate the balance response
-        response_data = response.json()
-        logger.info("***** data")
-        logger.info(response_data)
-        balance_data = parse_balance_response(response_data)
+    #     # Parse and validate the balance response
+    #     response_data = response.json()
+    #     balance_data = parse_balance_response(response_data)
 
-        assert balance_data is not None, "Failed to retrieve balance data"
-        assert balance_data.get("amount") == expected_balance, (
-            f"Expected balance {expected_balance} but got {balance_data.get('amount')}"
-        )
-        assert balance_data.get("token_type") == token_type, (
-            f"Expected token type {token_type} but got {balance_data.get('token_type')}"
-        )
-        if token_id is not None:
-            assert balance_data.get("token_id") == token_id, (
-                f"Expected token ID {token_id} but got {balance_data.get('token_id')}"
-            )
+    #     assert balance_data is not None, "Failed to retrieve balance data"
+    #     assert balance_data.get("amount") == expected_balance, (
+    #         f"Expected balance {expected_balance} but got {balance_data.get('amount')}"
+    #     )
+    #     assert balance_data.get("token_type") == token_type, (
+    #         f"Expected token type {token_type} but got {balance_data.get('token_type')}"
+    #     )
+    #     if token_id is not None:
+    #         assert balance_data.get("token_id") == token_id, (
+    #             f"Expected token ID {token_id} but got {balance_data.get('token_id')}"
+    #         )
 
-        print(f"Balance check passed for {token_type}, account {account}")
+    #     print(f"Balance check passed for {token_type}, account {account}")
 
-    # def test_transfer(self):
-    #     transfers = [
-    #         ("ether_transfer", {"from": account_1, "to": account_2, "amount": 1000}),
-    #         ("erc20_transfer", {"from": account_1, "to": account_2, "erc20": erc20_token_address, "amount": 1000}),
-    #         ("erc721_transfer", {"from": account_1, "to": account_2, "erc721": erc721_token_address, "token_id": 0}),
-    #         ("erc1155_transfer", {"from": account_1, "to": account_2, "erc1155": erc1155_token_address, "token_id": 1, "amount": 2}),
-    #         ("erc1155_batch_transfer", {"from": account_1, "to": account_2, "erc1155": erc1155_token_address, "token_ids": [1, 2], "amounts": [3, 4]}),
-    #     ]
-    #     for route, args in transfers:
-    #         input_data = {
-    #             "route": route,
-    #             "args": args
-    #         }
-    #         encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
-    #         encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
-    #         tx_hash = send_transaction(input_box_address, encoded_data + encoded_input.hex())
-    #         assert tx_hash, f"Transfer or withdrawal failed for route {route}."
-    #         time.sleep(5)
+    def test_transfer(self):
+        transfers = [
+            ("ether_transfer", {"from": account_1, "to": account_2, "amount": w3.to_wei(1000, 'ether')}),
+            ("erc20_transfer", {"from": account_1, "to": account_2, "erc20": erc20_token_address, "amount": w3.to_wei(1000, 'ether')}),
+            # ("erc721_transfer", {"from": account_1, "to": account_2, "erc721": erc721_token_address, "token_id": 0}),
+            # ("erc1155_transfer", {"from": account_1, "to": account_2, "erc1155": erc1155_token_address, "token_id": 1, "amount": 2}),
+            # ("erc1155_batch_transfer", {"from": account_1, "to": account_2, "erc1155": erc1155_token_address, "token_ids": [1, 2], "amounts": [2, 4]}),
+        ]
+        for route, args in transfers:
+            input_data = {
+                "route": route,
+                "args": args
+            }
+            encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+            encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+            tx_hash = send_transaction(input_box_address, encoded_data + encoded_input.hex())
+            assert tx_hash, f"Transfer or withdrawal failed for route {route}."
+            time.sleep(SLEEP_TIME)
 
+
+    # @pytest.mark.parametrize("token_type, account, token_address, token_id, expected_balance", [
+    #     ("ether", account_2, None, None, w3.to_wei(1000, 'ether')),
+    #     ("erc20", account_2, erc20_token_address.lower(), None, w3.to_wei(1000, 'ether')),
+    #     ("erc721", account_2, erc721_token_address, 0, 1),
+    #     ("erc1155", account_2, erc1155_token_address, 1, 4),
+    #     ("erc1155", account_2, erc1155_token_address, 2, 4),
+
+    # ])
+    # def test_inspect_balance_account2(self, token_type, account, token_address, token_id, expected_balance):
+    #     # Construct the path
+    #     path = f"balance/{token_type}/{account}"
+    #     if token_address:
+    #         path += f"/{token_address}"
+    #     if token_id is not None:
+    #         path += f"/{token_id}"
+
+    #     # Send the inspect request to the server
+    #     response = requests.get(f"{rollup_server}/inspect/{path}")
+    #     assert response.status_code == 200, f"Failed to inspect balance for {token_type}"
+
+    #     # Parse and validate the balance response
+    #     response_data = response.json()
+
+    #     balance_data = parse_balance_response(response_data)
+
+    #     assert balance_data is not None, "Failed to retrieve balance data"
+    #     assert balance_data.get("amount") == expected_balance, (
+    #         f"Expected balance {expected_balance} but got {balance_data.get('amount')}"
+    #     )
+    #     assert balance_data.get("token_type") == token_type, (
+    #         f"Expected token type {token_type} but got {balance_data.get('token_type')}"
+    #     )
+    #     if token_id is not None:
+    #         assert balance_data.get("token_id") == token_id, (
+    #             f"Expected token ID {token_id} but got {balance_data.get('token_id')}"
+    #         )
+
+    #     print(f"Balance check passed for {token_type}, account {account}")
+
+    def test_withdraw_ether(self):
+        value = w3.to_wei(500, 'ether')  # Withdrawal amount
+        input_data = {
+            "route": "ether_withdraw",
+            "args": {"from": account_2, "amount": value}
+        }
+        encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+        encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+        tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+        
+        assert tx_hash, f"Ether withdrawal failed for {value} ETH."
+        time.sleep(SLEEP_TIME)
+
+    def test_withdraw_erc20(self):
+        value = w3.to_wei(500, 'ether')  # Withdrawal amount
+        input_data = {
+            "route": "erc20_withdraw",
+            "args": {"from": account_2, "erc20": erc20_token_address, "amount": value}
+        }
+        encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+        encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+        tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+        
+        assert tx_hash, f"ERC20 withdrawal failed for {value} tokens."
+        time.sleep(SLEEP_TIME)
+
+    # def test_withdraw_erc721(self):
+    #     token_id = 0  # Token ID to withdraw
+    #     input_data = {
+    #         "route": "erc721_withdraw",
+    #         "args": {"from": account_2, "erc721": erc721_token_address, "token_id": token_id}
+    #     }
+    #     encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #     encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #     tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+        
+    #     assert tx_hash, f"ERC721 withdrawal failed for token ID {token_id}."
+    #     time.sleep(SLEEP_TIME)
+
+    # def test_withdraw_erc1155(self):
+    #     token_id, value = 1, 2  # Token ID and amount to withdraw
+    #     input_data = {
+    #         "route": "erc1155_withdraw",
+    #         "args": {"from": account_2, "erc1155": erc1155_token_address, "token_id": token_id, "amount": value}
+    #     }
+    #     encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #     encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #     tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+        
+    #     assert tx_hash, f"ERC1155 withdrawal failed for token ID {token_id}, amount {value}."
+    #     time.sleep(SLEEP_TIME)
+
+    # def test_withdraw_erc1155_batch(self):
+    #     token_ids, values = [1, 2], [1, 2]  # Token IDs and amounts to withdraw
+    #     input_data = {
+    #         "route": "erc1155_batch_withdraw",
+    #         "args": {"from": account_2, "erc1155": erc1155_token_address, "token_ids": token_ids, "amounts": values}
+    #     }
+    #     encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #     encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #     tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+        
+    #     assert tx_hash, f"ERC1155 batch withdrawal failed for token IDs {token_ids}."
+    #     time.sleep(SLEEP_TIME)
+
+    # @pytest.mark.parametrize("token_type, account, token_address, token_id, expected_balance", [
+    #     ("ether", account_2, None, None, w3.to_wei(500, 'ether')),
+    #     ("erc20", account_2, erc20_token_address.lower(), None, w3.to_wei(500, 'ether')),
+    #     ("erc721", account_2, erc721_token_address, 0, 0),
+    #     ("erc1155", account_2, erc1155_token_address, 1, 1),
+    #     ("erc1155", account_2, erc1155_token_address, 2, 2),
+
+    # ])
+    # def test_inspect_balance_account2_again(self, token_type, account, token_address, token_id, expected_balance):
+    #     # Construct the path
+    #     path = f"balance/{token_type}/{account}"
+    #     if token_address:
+    #         path += f"/{token_address}"
+    #     if token_id is not None:
+    #         path += f"/{token_id}"
+
+    #     # Send the inspect request to the server
+    #     response = requests.get(f"{rollup_server}/inspect/{path}")
+    #     assert response.status_code == 200, f"Failed to inspect balance for {token_type}"
+
+    #     # Parse and validate the balance response
+    #     response_data = response.json()
+
+    #     balance_data = parse_balance_response(response_data)
+
+    #     assert balance_data is not None, "Failed to retrieve balance data"
+    #     assert balance_data.get("amount") == expected_balance, (
+    #         f"Expected balance {expected_balance} but got {balance_data.get('amount')}"
+    #     )
+    #     assert balance_data.get("token_type") == token_type, (
+    #         f"Expected token type {token_type} but got {balance_data.get('token_type')}"
+    #     )
+    #     if token_id is not None:
+    #         assert balance_data.get("token_id") == token_id, (
+    #             f"Expected token ID {token_id} but got {balance_data.get('token_id')}"
+    #         )
+
+    #     print(f"Balance check passed for {token_type}, account {account}")

@@ -2,3 +2,4 @@ requests == 2.31.0
 routes == 2.5.0
 eth-utils == 5.1.0
 eth-abi == 5.1.0
+eth-hash[pycryptodome] == 0.7.0

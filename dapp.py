@@ -14,10 +14,10 @@ if "ROLLUP_HTTP_SERVER_URL" in environ:
     rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 
-dapp_relay_address = "0xF5DE34d6BbC0446E2a45719E718efEbaaE179daE" #open(f'./deployments/{network}/ERC20Portal.json')
-ether_portal_address = "0xFfdbe43d4c855BF7e0f105c400A50857f53AB044" #open(f'./deployments/{network}/EtherPortal.json')
-erc20_portal_address = "0x9C21AEb2093C32DDbC53eEF24B873BDCd1aDa1DB" #open(f'./deployments/{network}/ERC20Portal.json')
-erc721_portal_address = "0x237F8DD094C0e47f4236f12b4Fa01d6Dae89fb87" #open(f'./deployments/{network}/ERC721Portal.json')
+dapp_relay_address = "0xF5DE34d6BbC0446E2a45719E718efEbaaE179daE"
+ether_portal_address = "0xFfdbe43d4c855BF7e0f105c400A50857f53AB044"
+erc20_portal_address = "0x9C21AEb2093C32DDbC53eEF24B873BDCd1aDa1DB"
+erc721_portal_address = "0x237F8DD094C0e47f4236f12b4Fa01d6Dae89fb87"
 erc1155_portal_address = "0x7CFB0193Ca87eB6e48056885E026552c3A941FC4"
 erc1155_batch_portal_address = "0xedB53860A6B52bbb7561Ad596416ee9965B055Aa"
 
@@ -50,25 +50,17 @@ def handle_advance(data):
 
         # Determine the type of deposit based on the message sender
         notice = handle_deposit(msg_sender, payload)
-
         if notice:
             response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
             logger.info(f"Received notice status {response.status_code} body {response.content}")
             return "accept"
+        
         else:
             # Process other routes like transfers and withdrawals
-            logger.info("##### will req")
-            logger.info(payload)
             req_json = decode_json(payload)
-            logger.info(req_json)
             route = req_json.get("route")
             args = req_json.get("args", {})
             notice, voucher = handle_transfer_withdraw(route, args)
-
-            if notice:
-                logger.info(f"Received notice status {response.status_code} body {response.content}")
-            elif voucher:
-                logger.info(f"Received voucher status {response.status_code} body {response.content}")
 
             return "accept" if (notice or voucher) else "reject"
 
@@ -120,7 +112,7 @@ def handle_transfer_withdraw(route, args):
         notice = wallet.erc1155_transfer(args["from"].lower(), args["to"].lower(), args["erc1155"].lower(), args["token_id"], converted_value(args["amount"]))
         response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
     elif route == "erc1155_withdraw":
-        voucher = wallet.erc1155_withdraw(rollup_address, args["from"].lower(), args["erc1155"].lower(), args["token_id"], converted_value(args["amount"]))
+        voucher = wallet.erc1155_single_withdraw(rollup_address, args["from"].lower(), args["erc1155"].lower(), args["token_id"], converted_value(args["amount"]))
         response = requests.post(rollup_server + "/voucher", json={"payload": voucher.payload, "destination": voucher.destination})
 
     elif route == "erc1155_batch_transfer":
@@ -145,7 +137,7 @@ def handle_error(payload, error):
     response = requests.post(rollup_server + "/report", json={"payload": encode(error_msg)})
     if response:
         logger.info(f"Received report status {response.status_code} body {response.content}")
-    logger.debug(error_msg, exc_info=True)
+    logger.info(error_msg, exc_info=True)
 
 def handle_inspect(data):
     logger.info(f"Received inspect request data {data}")
@@ -163,7 +155,6 @@ def handle_inspect(data):
                 amount = wallet.balance_get(account).erc20_get(token_address.lower())
             elif token_type == "erc721":
                 token_address, token_id = info[2], int(info[3])
-                logger.info(f"checking balance for {token_id} of {token_address} in wallet {account}")
                 wallet.balance_get(account).erc721_get(token_address.lower())
                 amount = 1 if token_id in wallet.balance_get(account).erc721_get(token_address.lower()) else 0
             elif token_type == "erc1155":

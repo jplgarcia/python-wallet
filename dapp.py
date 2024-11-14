@@ -14,16 +14,13 @@ if "ROLLUP_HTTP_SERVER_URL" in environ:
     rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 
-dapp_relay_address = "0xF5DE34d6BbC0446E2a45719E718efEbaaE179daE"
-ether_portal_address = "0xFfdbe43d4c855BF7e0f105c400A50857f53AB044"
-erc20_portal_address = "0x9C21AEb2093C32DDbC53eEF24B873BDCd1aDa1DB"
-erc721_portal_address = "0x237F8DD094C0e47f4236f12b4Fa01d6Dae89fb87"
-erc1155_portal_address = "0x7CFB0193Ca87eB6e48056885E026552c3A941FC4"
-erc1155_batch_portal_address = "0xedB53860A6B52bbb7561Ad596416ee9965B055Aa"
-
+ether_portal_address = "0xfa2292f6D85ea4e629B156A4f99219e30D12EE17"
+erc20_portal_address = "0xB0e28881FF7ee9CD5B1229d570540d74bce23D39"
+erc721_portal_address = "0x874b3245ead7474Cb9f3b83cD1446dC522f6bd36"
+erc1155_portal_address = "0x2f0D587DD6EcF67d25C558f2e9c3839c579e5e38"
+erc1155_batch_portal_address = "0x4a218D331C0933d7E3EB496ac901669f28D94981"
 
 wallet = Wallet
-rollup_address = ""
 
 def encode(d):
     return "0x" + json.dumps(d).encode("utf-8").hex()
@@ -38,16 +35,9 @@ def handle_advance(data):
     
     msg_sender = data["metadata"]["msg_sender"].lower()
     payload = data["payload"]
-    global rollup_address
+    rollup_address = data["metadata"]["app_contract"].lower()
 
     try:
-        # Check if the request is from the dApp relay
-        if msg_sender == dapp_relay_address.lower():
-            logger.info("Received advance from dApp relay")
-            rollup_address = payload
-            response = requests.post(rollup_server + "/notice", json={"payload": str_to_hex(f"Set rollup_address {rollup_address}")})
-            return "accept"
-
         # Determine the type of deposit based on the message sender
         notice = handle_deposit(msg_sender, payload)
         if notice:
@@ -60,7 +50,7 @@ def handle_advance(data):
             req_json = decode_json(payload)
             route = req_json.get("route")
             args = req_json.get("args", {})
-            notice, voucher = handle_transfer_withdraw(route, args)
+            notice, voucher = handle_transfer_withdraw(route, args, rollup_address.lower())
 
             return "accept" if (notice or voucher) else "reject"
 
@@ -82,7 +72,7 @@ def handle_deposit(msg_sender, payload):
         return wallet.erc1155_batch_deposit_process(payload)
     return None
 
-def handle_transfer_withdraw(route, args):
+def handle_transfer_withdraw(route, args, rollup_address):
     """Handle transfer and withdrawal routes."""
     notice, voucher, response = None, None, None
     converted_value = lambda value: int(value) if isinstance(value, str) and value.isdigit() else value
@@ -92,29 +82,35 @@ def handle_transfer_withdraw(route, args):
         response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
     elif route == "ether_withdraw":
         voucher = wallet.ether_withdraw(rollup_address, args["from"].lower(), converted_value(args["amount"]))
-        response = requests.post(rollup_server + "/voucher", json={"payload": voucher.payload, "destination": voucher.destination})
+        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
+        response = requests.post(rollup_server + "/voucher", json=body)
 
     elif route == "erc20_transfer":
         notice = wallet.erc20_transfer(args["from"].lower(), args["to"].lower(), args["erc20"].lower(), converted_value(args["amount"]))
         response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
     elif route == "erc20_withdraw":
         voucher = wallet.erc20_withdraw(args["from"].lower(), args["erc20"].lower(), converted_value(args["amount"]))
-        response = requests.post(rollup_server + "/voucher", json={"payload": voucher.payload, "destination": voucher.destination})
+        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
+        print("\n\nbody")
+        print(body)
+        response = requests.post(rollup_server + "/voucher", json=body)
 
     elif route == "erc721_transfer":
         notice = wallet.erc721_transfer(args["from"].lower(), args["to"].lower(), args["erc721"].lower(), args["token_id"])
         response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
     elif route == "erc721_withdraw":
         voucher = wallet.erc721_withdraw(rollup_address, args["from"].lower(), args["erc721"].lower(), args["token_id"])
-        response = requests.post(rollup_server + "/voucher", json={"payload": voucher.payload, "destination": voucher.destination})
-
+        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
+        response = requests.post(rollup_server + "/voucher", json=body)
+        
     elif route == "erc1155_transfer":
         notice = wallet.erc1155_transfer(args["from"].lower(), args["to"].lower(), args["erc1155"].lower(), args["token_id"], converted_value(args["amount"]))
         response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
     elif route == "erc1155_withdraw":
         voucher = wallet.erc1155_single_withdraw(rollup_address, args["from"].lower(), args["erc1155"].lower(), args["token_id"], converted_value(args["amount"]))
-        response = requests.post(rollup_server + "/voucher", json={"payload": voucher.payload, "destination": voucher.destination})
-
+        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
+        response = requests.post(rollup_server + "/voucher", json=body)
+        
     elif route == "erc1155_batch_transfer":
         token_ids = args["token_ids"]
         amounts = [converted_value(amount) for amount in args["amounts"]]
@@ -124,8 +120,9 @@ def handle_transfer_withdraw(route, args):
         token_ids = args["token_ids"]
         amounts = [converted_value(amount) for amount in args["amounts"]]
         voucher = wallet.erc1155_batch_withdraw(rollup_address, args["from"].lower(), args["erc1155"].lower(), token_ids, amounts)
-        response = requests.post(rollup_server + "/voucher", json={"payload": voucher.payload, "destination": voucher.destination})
-
+        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
+        response = requests.post(rollup_server + "/voucher", json=body)
+        
     if response:
         logger.info(f"Received notice/voucher status {response.status_code} body {response.content}")
 

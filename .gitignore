@@ -1,6 +1,7 @@
 .cartesi
 .venv
 
+tests/erc20_project/
 tests/erc721_project/
 tests/erc1155_project/
 

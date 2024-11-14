@@ -10,7 +10,7 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-from coil_wallet.util import str_to_hex
+from coil_wallet.util import str_to_hex, encode_values
 
 
 class Output():
@@ -42,9 +42,12 @@ class Voucher(Output):
             payload(bytes): an ABI encoded contract function call
     """
 
-    def __init__(self, destination: str, payload: bytes):
+    def __init__(self, destination: str, payload: bytes, value = None):
         self.destination = destination
-       
+        self.value = value
+        if value is None:
+            self.value = '0x' + encode_values(["uint256"], [0]).hex()
+
         if payload[:2] == "0x":
             super().__init__(payload)
         else:        

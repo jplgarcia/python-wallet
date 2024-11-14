@@ -11,7 +11,7 @@
 # specific language governing permissions and limitations under the License.
 
 import json
-from coil_wallet.util import decode_payload, decode_id_val, encode_function_call
+from coil_wallet.util import decode_payload, decode_id_val, encode_function_call, encode_values
 from coil_wallet.balance import Balance
 from coil_wallet.log import logger
 from coil_wallet.outputs import Notice, Voucher
@@ -21,8 +21,6 @@ ERC20_TRANSFER_FUNCTION_SELECTOR = "transfer(address,uint256)"
 ERC721_SAFE_TRANSFER_FROM_SELECTOR = "safeTransferFrom(address,address,uint256)"
 ERC1155_SAFE_TRANSFER_FROM_SELECTOR = "safeTransferFrom(address,address,uint256,uint256,bytes)"
 ERC1155_SAFE_BATCH_TRANSFER_FROM_SELECTOR = "safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)"
-
-ETHERS_TRANSFER_FUNCTION_SELECTOR = b'R/h\x15'
 
 _accounts = dict[str: Balance]()
 
@@ -126,10 +124,13 @@ def ether_withdraw(rollup_address, account, amount):
     balance = _balance_get(account)
     balance._ether_decrease(amount)
 
-    transfer_payload = encode_function_call(ETHER_TRANSFER_FUNCTION_SELECTOR, ["address", "uint256"], [account, amount])
 
     logger.info(f"'{amount}' tokens withdrawn from '{account}'")
-    return Voucher(rollup_address, transfer_payload)
+
+    value = '0x' + encode_values(["uint256"], [amount]).hex()
+    print("\n\n encoded params")
+    print(value)
+    return Voucher(account, "0x", value)
 
 def ether_transfer(account, to, amount):
     '''
@@ -194,21 +195,15 @@ def _erc20_deposit_parse(payload: str):
     '''
     try:
         # input_data = decode_payload(
-        #     ['bool',     # Is a valid deposit
-        #      'address',  # Address of the ERC-20 contract
+        #     ['address',  # Address of the ERC-20 contract
         #      'address',  # Address which deposited the tokens
         #      'uint256'], # Amount of ERC-20 tokens being deposited
         #     payload
         # )
 
-        valid = decode_payload(['uint256'], '0x' + ("00" * 31) + payload[2:4])[0]
-        if not valid:   
-            raise ValueError("Invalid deposit with 'False' success flag")
-        # This is meant to be ignored on v2
-
-        erc20 = "0x" + payload[4:44]
-        account = "0x" + payload[44:84]
-        amount = decode_payload(['uint256'], '0x' + payload[84:])[0]
+        erc20 = "0x" + payload[2:42]
+        account = "0x" + payload[42:82]
+        amount = decode_payload(['uint256'], '0x' + payload[82:])[0]
         return account, erc20, amount
     except Exception as error:
         raise ValueError(

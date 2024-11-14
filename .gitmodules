@@ -13,3 +13,6 @@
 [submodule "tests/erc1155_project/lib/openzeppelin-contracts"]
 	path = tests/erc1155_project/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "tests/erc20_project/lib/openzeppelin-contracts"]
+	path = tests/erc20_project/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts

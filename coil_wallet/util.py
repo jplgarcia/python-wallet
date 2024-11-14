@@ -64,3 +64,5 @@ def encode_function_call(function_signature: str, types: List[str], values: List
     # Concatenate the selector and the encoded parameters
     return "0x" + (selector + encoded_params).hex()
 
+def encode_values(types: List[str], values: List):
+    return encode(types, values)

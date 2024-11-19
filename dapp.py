@@ -5,6 +5,12 @@ import logging
 import json
 import coil_wallet.wallet as Wallet
 from coil_wallet.util import hex_to_str, str_to_hex
+from coil_wallet.outputs import Report, Notice, Voucher
+from coil_wallet.ether_processor import EtherProcessor
+from coil_wallet.erc20_processor import Erc20Processor
+from coil_wallet.erc721_processor import Erc721Processor
+from coil_wallet.erc1155_processor import Erc1155Processor
+
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -21,9 +27,12 @@ erc1155_portal_address = "0x2f0D587DD6EcF67d25C558f2e9c3839c579e5e38"
 erc1155_batch_portal_address = "0x4a218D331C0933d7E3EB496ac901669f28D94981"
 
 wallet = Wallet
+ac = wallet.accs()
+ep = EtherProcessor(ac)
+e20p = Erc20Processor(ac)
+e721p = Erc721Processor(ac)
+e1155p = Erc1155Processor(ac)
 
-def encode(d):
-    return "0x" + json.dumps(d).encode("utf-8").hex()
 
 def decode_json(b):
     s = bytes.fromhex(b[2:]).decode("utf-8")
@@ -37,6 +46,8 @@ def handle_advance(data):
     payload = data["payload"]
     rollup_address = data["metadata"]["app_contract"].lower()
 
+    response = None
+
     try:
         # Determine the type of deposit based on the message sender
         notice = handle_deposit(msg_sender, payload)
@@ -45,14 +56,47 @@ def handle_advance(data):
             logger.info(f"Received notice status {response.status_code} body {response.content}")
             return "accept"
         
-        else:
-            # Process other routes like transfers and withdrawals
-            req_json = decode_json(payload)
-            route = req_json.get("route")
-            args = req_json.get("args", {})
-            notice, voucher = handle_transfer_withdraw(route, args, rollup_address.lower())
+        # Process other routes like transfers and withdrawals
+        req_json = decode_json(payload)
+        route = req_json.get("route")
+        args = req_json.get("args", {})
 
-            return "accept" if (notice or voucher) else "reject"
+        """Handle transfer and withdrawal routes."""
+        converted_value = lambda value: int(value) if isinstance(value, str) and value.isdigit() else value
+
+        if route == "ether_transfer":
+            response = ep.transfer(msg_sender, args["to"].lower(), converted_value(args["amount"])).create()
+        elif route == "ether_withdraw":
+            response = ep.withdraw(rollup_address.lower(), msg_sender, converted_value(args["amount"])).create()
+
+        elif route == "erc20_transfer":
+            response = e20p.transfer(msg_sender, args["to"].lower(), args["erc20"].lower(), converted_value(args["amount"])).create()
+        elif route == "erc20_withdraw":
+            response = e20p.withdraw(rollup_address, msg_sender, args["erc20"].lower(), converted_value(args["amount"])).create()
+
+        elif route == "erc721_transfer":
+            response = e721p.transfer(msg_sender, args["to"].lower(), args["erc721"].lower(), args["token_id"]).create()
+        elif route == "erc721_withdraw":
+            response = e721p.withdraw(rollup_address, msg_sender, args["erc721"].lower(), args["token_id"]).create()
+            
+        elif route == "erc1155_transfer":
+            response = e1155p.transfer(args["from"].lower(), args["to"].lower(), args["erc1155"].lower(), args["token_id"], converted_value(args["amount"])).create()
+        elif route == "erc1155_withdraw":
+            response = e1155p.withdraw(rollup_address, msg_sender, args["erc1155"].lower(), args["token_id"], converted_value(args["amount"])).create()
+            
+        elif route == "erc1155_batch_transfer":
+            token_ids = args["token_ids"]
+            amounts = [converted_value(amount) for amount in args["amounts"]]
+            response = e1155p.batch_transfer(msg_sender, args["to"].lower(), args["erc1155"].lower(), token_ids, amounts).create()
+        elif route == "erc1155_batch_withdraw":
+            token_ids = args["token_ids"]
+            amounts = [converted_value(amount) for amount in args["amounts"]]
+            response = e1155p.batch_withdraw(rollup_address, msg_sender, args["erc1155"].lower(), token_ids, amounts).create()
+            
+        if response:
+            logger.info(f"Received notice/voucher status {response.status_code} body {response.content}")
+
+        return "accept"
 
     except Exception as error:
         handle_error(payload, error)
@@ -61,77 +105,21 @@ def handle_advance(data):
 def handle_deposit(msg_sender, payload):
     """Process deposit actions based on the sender address."""
     if msg_sender == ether_portal_address.lower():
-        return wallet.ether_deposit_process(payload)
+        return ep.deposit(payload)
     elif msg_sender == erc20_portal_address.lower():
-        return wallet.erc20_deposit_process(payload)
+        return e20p.deposit(payload)
     elif msg_sender == erc721_portal_address.lower():
-        return wallet.erc721_deposit_process(payload)
+        return e721p.deposit(payload)
     elif msg_sender == erc1155_portal_address.lower():
-        return wallet.erc1155_single_deposit_process(payload)
+        return e1155p.deposit(payload)
     elif msg_sender == erc1155_batch_portal_address.lower():
-        return wallet.erc1155_batch_deposit_process(payload)
+        return e1155p.batch_deposit(payload)
     return None
-
-def handle_transfer_withdraw(route, args, rollup_address):
-    """Handle transfer and withdrawal routes."""
-    notice, voucher, response = None, None, None
-    converted_value = lambda value: int(value) if isinstance(value, str) and value.isdigit() else value
-
-    if route == "ether_transfer":
-        notice = wallet.ether_transfer(args["from"].lower(), args["to"].lower(), converted_value(args["amount"]))
-        response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
-    elif route == "ether_withdraw":
-        voucher = wallet.ether_withdraw(rollup_address, args["from"].lower(), converted_value(args["amount"]))
-        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
-        response = requests.post(rollup_server + "/voucher", json=body)
-
-    elif route == "erc20_transfer":
-        notice = wallet.erc20_transfer(args["from"].lower(), args["to"].lower(), args["erc20"].lower(), converted_value(args["amount"]))
-        response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
-    elif route == "erc20_withdraw":
-        voucher = wallet.erc20_withdraw(args["from"].lower(), args["erc20"].lower(), converted_value(args["amount"]))
-        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
-        print("\n\nbody")
-        print(body)
-        response = requests.post(rollup_server + "/voucher", json=body)
-
-    elif route == "erc721_transfer":
-        notice = wallet.erc721_transfer(args["from"].lower(), args["to"].lower(), args["erc721"].lower(), args["token_id"])
-        response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
-    elif route == "erc721_withdraw":
-        voucher = wallet.erc721_withdraw(rollup_address, args["from"].lower(), args["erc721"].lower(), args["token_id"])
-        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
-        response = requests.post(rollup_server + "/voucher", json=body)
-        
-    elif route == "erc1155_transfer":
-        notice = wallet.erc1155_transfer(args["from"].lower(), args["to"].lower(), args["erc1155"].lower(), args["token_id"], converted_value(args["amount"]))
-        response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
-    elif route == "erc1155_withdraw":
-        voucher = wallet.erc1155_single_withdraw(rollup_address, args["from"].lower(), args["erc1155"].lower(), args["token_id"], converted_value(args["amount"]))
-        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
-        response = requests.post(rollup_server + "/voucher", json=body)
-        
-    elif route == "erc1155_batch_transfer":
-        token_ids = args["token_ids"]
-        amounts = [converted_value(amount) for amount in args["amounts"]]
-        notice = wallet.erc1155_batch_transfer(args["from"].lower(), args["to"].lower(), args["erc1155"].lower(), token_ids, amounts)
-        response = requests.post(rollup_server + "/notice", json={"payload": notice.payload})
-    elif route == "erc1155_batch_withdraw":
-        token_ids = args["token_ids"]
-        amounts = [converted_value(amount) for amount in args["amounts"]]
-        voucher = wallet.erc1155_batch_withdraw(rollup_address, args["from"].lower(), args["erc1155"].lower(), token_ids, amounts)
-        body = {"payload": voucher.payload, "destination": voucher.destination, "value": voucher.value}
-        response = requests.post(rollup_server + "/voucher", json=body)
-        
-    if response:
-        logger.info(f"Received notice/voucher status {response.status_code} body {response.content}")
-
-    return notice, voucher
 
 def handle_error(payload, error):
     """Handle errors in processing."""
     error_msg = f"Failed to process command '{payload}'. {error}"
-    response = requests.post(rollup_server + "/report", json={"payload": encode(error_msg)})
+    Report.from_string(error_msg).create()
     if response:
         logger.info(f"Received report status {response.status_code} body {response.content}")
     logger.info(error_msg, exc_info=True)
@@ -158,8 +146,7 @@ def handle_inspect(data):
                 token_address, token_id = info[2], int(info[3])
                 amount = wallet.balance_get(account).erc1155_get(token_address.lower(), token_id)
 
-            report = {"payload": encode({"token_id": token_id, "amount": amount, "token_type": token_type})}
-            response = requests.post(rollup_server + "/report", json=report)
+            Report.from_json({"token_id": token_id, "amount": amount, "token_type": token_type}).create()
             logger.info(f"Received report status {response.status_code} body {response.content}")
         
         return "accept"

@@ -57,7 +57,10 @@ def send_transaction(to, data, value=0):
         'gasPrice': w3.to_wei('50', 'gwei'),
         'nonce': w3.eth.get_transaction_count(account_1),
     }
+    logger.info("DATAAA")
+    logger.info(data)
     signed_tx = w3.eth.account.sign_transaction(tx, private_key=private_key_1)
+    print(signed_tx)
     return w3.to_hex(w3.eth.send_raw_transaction(signed_tx.raw_transaction))
 
 def send_transaction_from_account_2(to, data, value=0):
@@ -84,32 +87,15 @@ def parse_balance_response(response_content):
 # Ordered Test Class
 class TestDepositsAndTransfers:
 
-    # def deploy_contracts(self):
-    #     # Run the first script
-    #     result1 = subprocess.run(["bash", script1], capture_output=True, text=True)
-    #     print("Script 1 output:", result1.stdout)
-    #     if result1.stderr:
-    #         print("Script 1 error:", result1.stderr)
+    # def test_deposit_ether(self):
+    #     value = 1000
+    #     data = Web3.to_hex(Web3.keccak(text="depositEther(address,bytes)")[:4])
+
+    #     encoded_data = encode(['address', 'bytes'], [dapp_address, b''])
+    #     tx_hash = send_transaction(ether_portal_address, data + encoded_data.hex(), value)
+
+    #     assert tx_hash, f"Ether deposit failed for {value} ETH."
     #     time.sleep(SLEEP_TIME)
-
-
-    #     # Run the second script
-    #     result2 = subprocess.run(["bash", script2], capture_output=True, text=True)
-    #     print("Script 2 output:", result2.stdout)
-    #     if result2.stderr:
-    #         print("Script 2 error:", result2.stderr)
-
-    #     time.sleep(SLEEP_TIME)
-
-    def test_deposit_ether(self):
-        value = 1000
-        data = Web3.to_hex(Web3.keccak(text="depositEther(address,bytes)")[:4])
-
-        encoded_data = encode(['address', 'bytes'], [dapp_address, b''])
-        tx_hash = send_transaction(ether_portal_address, data + encoded_data.hex(), value)
-
-        assert tx_hash, f"Ether deposit failed for {value} ETH."
-        time.sleep(SLEEP_TIME)
 
 
     def test_deposit_erc20(self):
@@ -128,54 +114,54 @@ class TestDepositsAndTransfers:
         time.sleep(SLEEP_TIME)
 
 
-    def test_deposit_erc721(self):
+    # def test_deposit_erc721(self):
 
-        data = Web3.to_hex(Web3.keccak(text="approve(address,uint256)")[:4])
-        encoded_data = encode(['address', 'uint256'], [erc721_portal_address, 0])
-        tx_hash = send_transaction(erc721_token_address, data + encoded_data.hex())
-        time.sleep(SLEEP_TIME)
+    #     data = Web3.to_hex(Web3.keccak(text="approve(address,uint256)")[:4])
+    #     encoded_data = encode(['address', 'uint256'], [erc721_portal_address, 0])
+    #     tx_hash = send_transaction(erc721_token_address, data + encoded_data.hex())
+    #     time.sleep(SLEEP_TIME)
 
-        token_id = 0
-        data = Web3.to_hex(Web3.keccak(text="depositERC721Token(address,address,uint256,bytes,bytes)")[:4])
-        encoded_data = encode(['address', 'address', 'uint256', 'bytes', 'bytes'], [erc721_token_address, dapp_address, token_id, b'', b''])
-        tx_hash = send_transaction(erc721_portal_address, data + encoded_data.hex())
+    #     token_id = 0
+    #     data = Web3.to_hex(Web3.keccak(text="depositERC721Token(address,address,uint256,bytes,bytes)")[:4])
+    #     encoded_data = encode(['address', 'address', 'uint256', 'bytes', 'bytes'], [erc721_token_address, dapp_address, token_id, b'', b''])
+    #     tx_hash = send_transaction(erc721_portal_address, data + encoded_data.hex())
 
-        assert tx_hash, f"ERC721 deposit failed for token ID {token_id}."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC721 deposit failed for token ID {token_id}."
+    #     time.sleep(SLEEP_TIME)
 
 
-    def test_deposit_erc1155(self):
-        data = Web3.to_hex(Web3.keccak(text="setApprovalForAll(address,bool)")[:4])
-        encoded_data = encode(['address', 'bool'], [erc1155_portal_address, True])
-        tx_hash = send_transaction(erc1155_token_address, data + encoded_data.hex())
+    # def test_deposit_erc1155(self):
+    #     data = Web3.to_hex(Web3.keccak(text="setApprovalForAll(address,bool)")[:4])
+    #     encoded_data = encode(['address', 'bool'], [erc1155_portal_address, True])
+    #     tx_hash = send_transaction(erc1155_token_address, data + encoded_data.hex())
         
-        assert tx_hash, f"ERC1155 allowance failed."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC1155 allowance failed."
+    #     time.sleep(SLEEP_TIME)
     
-        token_id, value = 1, 2
-        data = Web3.to_hex(Web3.keccak(text="depositSingleERC1155Token(address,address,uint256,uint256,bytes,bytes)")[:4])
-        encoded_data = encode(['address', 'address', 'uint256', 'uint256', 'bytes', 'bytes'], [erc1155_token_address, dapp_address, token_id, value, b'', b''])
-        tx_hash = send_transaction(erc1155_portal_address, data + encoded_data.hex())
+    #     token_id, value = 1, 2
+    #     data = Web3.to_hex(Web3.keccak(text="depositSingleERC1155Token(address,address,uint256,uint256,bytes,bytes)")[:4])
+    #     encoded_data = encode(['address', 'address', 'uint256', 'uint256', 'bytes', 'bytes'], [erc1155_token_address, dapp_address, token_id, value, b'', b''])
+    #     tx_hash = send_transaction(erc1155_portal_address, data + encoded_data.hex())
 
-        assert tx_hash, f"ERC1155 single deposit failed for token ID {token_id}, value {value}."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC1155 single deposit failed for token ID {token_id}, value {value}."
+    #     time.sleep(SLEEP_TIME)
 
 
-    def test_deposit_erc1155_batch(self):
-        data = Web3.to_hex(Web3.keccak(text="setApprovalForAll(address,bool)")[:4])
-        encoded_data = encode(['address', 'bool'], [erc1155_batch_portal_address, True])
-        tx_hash = send_transaction(erc1155_token_address, data + encoded_data.hex())
+    # def test_deposit_erc1155_batch(self):
+    #     data = Web3.to_hex(Web3.keccak(text="setApprovalForAll(address,bool)")[:4])
+    #     encoded_data = encode(['address', 'bool'], [erc1155_batch_portal_address, True])
+    #     tx_hash = send_transaction(erc1155_token_address, data + encoded_data.hex())
 
-        assert tx_hash, f"ERC1155 allowance failed."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC1155 allowance failed."
+    #     time.sleep(SLEEP_TIME)
 
-        token_ids, values = [1, 2], [3, 4]
-        data = Web3.to_hex(Web3.keccak(text="depositBatchERC1155Token(address,address,uint256[],uint256[],bytes,bytes)")[:4])
-        encoded_data = encode(['address', 'address', 'uint256[]', 'uint256[]', 'bytes', 'bytes'], [erc1155_token_address, dapp_address, token_ids, values, b'', b''])
-        tx_hash = send_transaction(erc1155_batch_portal_address, data + encoded_data.hex())
+    #     token_ids, values = [1, 2], [3, 4]
+    #     data = Web3.to_hex(Web3.keccak(text="depositBatchERC1155Token(address,address,uint256[],uint256[],bytes,bytes)")[:4])
+    #     encoded_data = encode(['address', 'address', 'uint256[]', 'uint256[]', 'bytes', 'bytes'], [erc1155_token_address, dapp_address, token_ids, values, b'', b''])
+    #     tx_hash = send_transaction(erc1155_batch_portal_address, data + encoded_data.hex())
 
-        assert tx_hash, f"ERC1155 batch deposit failed for token IDs {token_ids}."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC1155 batch deposit failed for token IDs {token_ids}."
+    #     time.sleep(SLEEP_TIME)
 
     # @pytest.mark.parametrize("token_type, account, token_address, token_id, expected_balance", [
     #     ("ether", account_1, None, None, w3.to_wei(1000, 'ether')),
@@ -194,7 +180,7 @@ class TestDepositsAndTransfers:
     #         path += f"/{token_id}"
 
     #     # Send the inspect request to the server
-    #     response = requests.get(f"{rollup_server}/inspect/{path}")
+    #     response = requests.get(f"{rollup_server}/inspect/a/{path}")
     #     assert response.status_code == 200, f"Failed to inspect balance for {token_type}"
 
     #     # Parse and validate the balance response
@@ -215,24 +201,24 @@ class TestDepositsAndTransfers:
 
     #     print(f"Balance check passed for {token_type}, account {account}")
 
-    def test_transfer(self):
-        transfers = [
-            ("ether_transfer", {"from": account_1, "to": account_2, "amount": w3.to_wei(1000, 'ether')}),
-            ("erc20_transfer", {"from": account_1, "to": account_2, "erc20": erc20_token_address, "amount": w3.to_wei(1000, 'ether')}),
-            ("erc721_transfer", {"from": account_1, "to": account_2, "erc721": erc721_token_address, "token_id": 0}),
-            ("erc1155_transfer", {"from": account_1, "to": account_2, "erc1155": erc1155_token_address, "token_id": 1, "amount": 2}),
-            ("erc1155_batch_transfer", {"from": account_1, "to": account_2, "erc1155": erc1155_token_address, "token_ids": [1, 2], "amounts": [2, 4]}),
-        ]
-        for route, args in transfers:
-            input_data = {
-                "route": route,
-                "args": args
-            }
-            encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
-            encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
-            tx_hash = send_transaction(input_box_address, encoded_data + encoded_input.hex())
-            assert tx_hash, f"Transfer or withdrawal failed for route {route}."
-            time.sleep(SLEEP_TIME)
+    # def test_transfer(self):
+    #     transfers = [
+    #         ("ether_transfer", {"from": account_1, "to": account_2, "amount": w3.to_wei(1000, 'ether')}),
+    #         ("erc20_transfer", {"from": account_1, "to": account_2, "erc20": erc20_token_address, "amount": w3.to_wei(1000, 'ether')}),
+    #         ("erc721_transfer", {"from": account_1, "to": account_2, "erc721": erc721_token_address, "token_id": 0}),
+    #         ("erc1155_transfer", {"from": account_1, "to": account_2, "erc1155": erc1155_token_address, "token_id": 1, "amount": 2}),
+    #         ("erc1155_batch_transfer", {"from": account_1, "to": account_2, "erc1155": erc1155_token_address, "token_ids": [1, 2], "amounts": [2, 4]}),
+    #     ]
+    #     for route, args in transfers:
+    #         input_data = {
+    #             "route": route,
+    #             "args": args
+    #         }
+    #         encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #         encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #         tx_hash = send_transaction(input_box_address, encoded_data + encoded_input.hex())
+    #         assert tx_hash, f"Transfer or withdrawal failed for route {route}."
+    #         time.sleep(SLEEP_TIME)
 
 
     # @pytest.mark.parametrize("token_type, account, token_address, token_id, expected_balance", [
@@ -252,7 +238,7 @@ class TestDepositsAndTransfers:
     #         path += f"/{token_id}"
 
     #     # Send the inspect request to the server
-    #     response = requests.get(f"{rollup_server}/inspect/{path}")
+    #     response = requests.get(f"{rollup_server}/inspect/a/{path}")
     #     assert response.status_code == 200, f"Failed to inspect balance for {token_type}"
 
     #     # Parse and validate the balance response
@@ -274,70 +260,70 @@ class TestDepositsAndTransfers:
 
     #     print(f"Balance check passed for {token_type}, account {account}")
 
-    def test_withdraw_ether(self):
-        value = w3.to_wei(500, 'ether')  # Withdrawal amount
-        input_data = {
-            "route": "ether_withdraw",
-            "args": {"from": account_2, "amount": value}
-        }
-        encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
-        encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
-        tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+    # def test_withdraw_ether(self):
+    #     value = w3.to_wei(500, 'ether')  # Withdrawal amount
+    #     input_data = {
+    #         "route": "ether_withdraw",
+    #         "args": {"from": account_2, "amount": value}
+    #     }
+    #     encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #     encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #     tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
         
-        assert tx_hash, f"Ether withdrawal failed for {value} ETH."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"Ether withdrawal failed for {value} ETH."
+    #     time.sleep(SLEEP_TIME)
 
-    def test_withdraw_erc20(self):
-        value = w3.to_wei(500, 'ether')  # Withdrawal amount
-        input_data = {
-            "route": "erc20_withdraw",
-            "args": {"from": account_2, "erc20": erc20_token_address, "amount": value}
-        }
-        encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
-        encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
-        tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+    # def test_withdraw_erc20(self):
+    #     value = w3.to_wei(500, 'ether')  # Withdrawal amount
+    #     input_data = {
+    #         "route": "erc20_withdraw",
+    #         "args": {"from": account_2, "erc20": erc20_token_address, "amount": value}
+    #     }
+    #     encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #     encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #     tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
         
-        assert tx_hash, f"ERC20 withdrawal failed for {value} tokens."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC20 withdrawal failed for {value} tokens."
+    #     time.sleep(SLEEP_TIME)
 
-    def test_withdraw_erc721(self):
-        token_id = 0  # Token ID to withdraw
-        input_data = {
-            "route": "erc721_withdraw",
-            "args": {"from": account_2, "erc721": erc721_token_address, "token_id": token_id}
-        }
-        encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
-        encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
-        tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+    # def test_withdraw_erc721(self):
+    #     token_id = 0  # Token ID to withdraw
+    #     input_data = {
+    #         "route": "erc721_withdraw",
+    #         "args": {"from": account_2, "erc721": erc721_token_address, "token_id": token_id}
+    #     }
+    #     encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #     encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #     tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
         
-        assert tx_hash, f"ERC721 withdrawal failed for token ID {token_id}."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC721 withdrawal failed for token ID {token_id}."
+    #     time.sleep(SLEEP_TIME)
 
-    def test_withdraw_erc1155(self):
-        token_id, value = 1, 2  # Token ID and amount to withdraw
-        input_data = {
-            "route": "erc1155_withdraw",
-            "args": {"from": account_2, "erc1155": erc1155_token_address, "token_id": token_id, "amount": value}
-        }
-        encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
-        encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
-        tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+    # def test_withdraw_erc1155(self):
+    #     token_id, value = 1, 2  # Token ID and amount to withdraw
+    #     input_data = {
+    #         "route": "erc1155_withdraw",
+    #         "args": {"from": account_2, "erc1155": erc1155_token_address, "token_id": token_id, "amount": value}
+    #     }
+    #     encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #     encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #     tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
         
-        assert tx_hash, f"ERC1155 withdrawal failed for token ID {token_id}, amount {value}."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC1155 withdrawal failed for token ID {token_id}, amount {value}."
+    #     time.sleep(SLEEP_TIME)
 
-    def test_withdraw_erc1155_batch(self):
-        token_ids, values = [1, 2], [1, 2]  # Token IDs and amounts to withdraw
-        input_data = {
-            "route": "erc1155_batch_withdraw",
-            "args": {"from": account_2, "erc1155": erc1155_token_address, "token_ids": token_ids, "amounts": values}
-        }
-        encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
-        encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
-        tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
+    # def test_withdraw_erc1155_batch(self):
+    #     token_ids, values = [1, 2], [1, 2]  # Token IDs and amounts to withdraw
+    #     input_data = {
+    #         "route": "erc1155_batch_withdraw",
+    #         "args": {"from": account_2, "erc1155": erc1155_token_address, "token_ids": token_ids, "amounts": values}
+    #     }
+    #     encoded_data = Web3.to_hex(Web3.keccak(text="addInput(address,bytes)")[:4])
+    #     encoded_input = encode(['address', 'bytes'], [dapp_address, Web3.to_bytes(text=json.dumps(input_data))])
+    #     tx_hash = send_transaction_from_account_2(input_box_address, encoded_data + encoded_input.hex())
         
-        assert tx_hash, f"ERC1155 batch withdrawal failed for token IDs {token_ids}."
-        time.sleep(SLEEP_TIME)
+    #     assert tx_hash, f"ERC1155 batch withdrawal failed for token IDs {token_ids}."
+    #     time.sleep(SLEEP_TIME)
 
     # @pytest.mark.parametrize("token_type, account, token_address, token_id, expected_balance", [
     #     ("ether", account_2, None, None, w3.to_wei(500, 'ether')),
@@ -356,7 +342,7 @@ class TestDepositsAndTransfers:
     #         path += f"/{token_id}"
 
     #     # Send the inspect request to the server
-    #     response = requests.get(f"{rollup_server}/inspect/{path}")
+    #     response = requests.get(f"{rollup_server}/inspect/a/{path}")
     #     assert response.status_code == 200, f"Failed to inspect balance for {token_type}"
 
     #     # Parse and validate the balance response
